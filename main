@@ -1,0 +1,82 @@
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local enabled = true
+local savedGuis = {}
+
+-- CROSSHAIR
+local crosshairGui = Instance.new("ScreenGui")
+crosshairGui.Name = "CustomCrosshair"
+crosshairGui.IgnoreGuiInset = true
+crosshairGui.ResetOnSpawn = false
+crosshairGui.DisplayOrder = 999999
+crosshairGui.Parent = playerGui
+
+-- X NOIR
+local function createLine(name, rotation)
+    local line = Instance.new("Frame")
+    line.Name = name
+    line.Size = UDim2.fromOffset(2, 20)
+    line.Position = UDim2.fromScale(0.5, 0.5)
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    line.BorderSizePixel = 0
+    line.Rotation = rotation
+    line.Parent = crosshairGui
+end
+
+createLine("X1", 45)
+createLine("X2", -45)
+
+-- MASQUER LES INTERFACES
+local function hideGui(gui)
+    if gui:IsA("ScreenGui") and gui ~= crosshairGui then
+        if savedGuis[gui] == nil then
+            savedGuis[gui] = gui.Enabled
+        end
+        gui.Enabled = false
+    end
+end
+
+for _, gui in ipairs(playerGui:GetChildren()) do
+    hideGui(gui)
+end
+
+playerGui.ChildAdded:Connect(function(gui)
+    if enabled then
+        hideGui(gui)
+    end
+end)
+
+-- RESTAURER LES INTERFACES
+local function restoreGuis()
+    for gui, previousState in pairs(savedGuis) do
+        if gui.Parent == playerGui then
+            gui.Enabled = previousState
+        end
+    end
+    table.clear(savedGuis)
+end
+
+-- TOUCHE DELETE
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Delete then
+        enabled = not enabled
+
+        if enabled then
+            for _, gui in ipairs(playerGui:GetChildren()) do
+                hideGui(gui)
+            end
+            crosshairGui.Enabled = true
+        else
+            crosshairGui.Enabled = false
+            restoreGuis()
+        end
+    end
+end)
+
+crosshairGui.Enabled = true
